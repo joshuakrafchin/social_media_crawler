@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trending Meme Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <h1>Trending Meme Tracker</h1>
+                <p class="subtitle">Discover what's trending across social media right now</p>
+            </div>
+            <button id="settings-toggle" class="icon-btn" title="Settings">&#9881;</button>
+        </header>
+
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="panel hidden">
+            <div class="panel-header">
+                <h2>Settings</h2>
+                <button id="settings-close" class="icon-btn">&times;</button>
+            </div>
+            <div class="panel-body">
+                <label for="api-key">Gemini API Key</label>
+                <div class="input-row">
+                    <input type="password" id="api-key" placeholder="Enter your Gemini API key">
+                    <button id="toggle-key-visibility" class="icon-btn" title="Show/Hide">&#128065;</button>
+                </div>
+                <p class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a></p>
+
+                <label for="system-instructions">System Instructions</label>
+                <textarea id="system-instructions" rows="10"></textarea>
+                <div class="btn-row">
+                    <button id="reset-instructions" class="btn btn-secondary">Reset to Default</button>
+                    <button id="save-settings" class="btn btn-primary">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Platform Selector -->
+            <section id="platform-section">
+                <h2>Select Platforms</h2>
+                <div id="platform-grid"></div>
+                <button id="scan-btn" class="btn btn-primary btn-large" disabled>
+                    Scan for Trending Memes
+                </button>
+            </section>
+
+            <!-- Results -->
+            <section id="results-section" class="hidden">
+                <div class="results-header">
+                    <h2>Trending Memes</h2>
+                    <button id="new-scan-btn" class="btn btn-secondary">New Scan</button>
+                </div>
+                <div id="loading" class="hidden">
+                    <div class="spinner"></div>
+                    <p id="loading-text">Scanning social media platforms...</p>
+                </div>
+                <div id="results-container"></div>
+            </section>
+
+            <!-- Chat -->
+            <section id="chat-section" class="hidden">
+                <h2>Ask About These Trends</h2>
+                <div id="chat-messages"></div>
+                <div class="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Ask a question about these trends...">
+                    <button id="chat-send" class="btn btn-primary">Send</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>Powered by Google Gemini API &middot; Your API key stays in your browser</p>
+        </footer>
+    </div>
+
+    <script src="platforms.js"></script>
+    <script src="gemini.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
