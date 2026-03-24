@@ -64,6 +64,22 @@
             selectedPlatforms.add(id);
             card.classList.add("selected");
         }
+        $("#select-all-btn").textContent = selectedPlatforms.size === PLATFORMS.length ? "Deselect All" : "Select All";
+        updateScanBtnState();
+    }
+
+    function toggleSelectAll() {
+        const allSelected = selectedPlatforms.size === PLATFORMS.length;
+        const cards = platformGrid.querySelectorAll(".platform-card");
+        if (allSelected) {
+            selectedPlatforms.clear();
+            cards.forEach(c => c.classList.remove("selected"));
+            $("#select-all-btn").textContent = "Select All";
+        } else {
+            PLATFORMS.forEach(p => selectedPlatforms.add(p.id));
+            cards.forEach(c => c.classList.add("selected"));
+            $("#select-all-btn").textContent = "Deselect All";
+        }
         updateScanBtnState();
     }
 
@@ -95,6 +111,7 @@
         $("#toggle-key-visibility").addEventListener("click", () => {
             apiKeyInput.type = apiKeyInput.type === "password" ? "text" : "password";
         });
+        $("#select-all-btn").addEventListener("click", toggleSelectAll);
         scanBtn.addEventListener("click", startScan);
         $("#new-scan-btn").addEventListener("click", resetToScan);
         $("#chat-send").addEventListener("click", sendChat);

@@ -4,8 +4,8 @@
 class GeminiClient {
     constructor(apiKey) {
         this.apiKey = apiKey;
-        // Use Gemini 2.0 Flash — fast, capable, and supports grounding with Google Search
-        this.model = "gemini-2.0-flash";
+        // Use Gemini 2.5 Flash — latest model with grounding support
+        this.model = "gemini-2.5-flash-preview-05-20";
         this.baseUrl = "https://generativelanguage.googleapis.com/v1beta";
     }
 

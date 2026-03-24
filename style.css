@@ -131,6 +131,9 @@ textarea { resize: vertical; }
 main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
 section { margin-bottom: 2.5rem; }
 section h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.section-header h2 { margin-bottom: 0; }
+.btn-small { padding: .4rem .8rem; font-size: .8rem; }
 
 /* Platform Grid */
 #platform-grid {
