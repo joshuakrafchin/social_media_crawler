@@ -14,80 +14,43 @@
         <header>
             <div class="header-content">
                 <h1>Trending Meme Tracker</h1>
-                <p class="subtitle">Discover what's trending across social media right now</p>
+                <p class="subtitle">Live trending content from Mastodon &amp; Bluesky</p>
             </div>
-            <button id="settings-toggle" class="icon-btn" title="Settings">&#9881;</button>
         </header>
-
-        <!-- Settings Panel -->
-        <div id="settings-panel" class="panel hidden">
-            <div class="panel-header">
-                <h2>Settings</h2>
-                <button id="settings-close" class="icon-btn">&times;</button>
-            </div>
-            <div class="panel-body">
-                <label for="api-key">Gemini API Key</label>
-                <div class="input-row">
-                    <input type="password" id="api-key" placeholder="Enter your Gemini API key">
-                    <button id="toggle-key-visibility" class="icon-btn" title="Show/Hide">&#128065;</button>
-                </div>
-                <p class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a></p>
-
-                <label for="system-instructions">System Instructions</label>
-                <textarea id="system-instructions" rows="10"></textarea>
-                <div class="btn-row">
-                    <button id="reset-instructions" class="btn btn-secondary">Reset to Default</button>
-                    <button id="save-settings" class="btn btn-primary">Save Settings</button>
-                </div>
-            </div>
-        </div>
 
         <!-- Main Content -->
         <main>
             <!-- Platform Selector -->
             <section id="platform-section">
-                <div class="section-header">
-                    <h2>Select Platforms</h2>
-                    <button id="select-all-btn" class="btn btn-secondary btn-small">Select All</button>
-                </div>
+                <h2>Select Platforms</h2>
                 <div id="platform-grid"></div>
                 <button id="scan-btn" class="btn btn-primary btn-large" disabled>
-                    Scan for Trending Memes
+                    Scan for Trending Content
                 </button>
             </section>
 
             <!-- Results -->
             <section id="results-section" class="hidden">
                 <div class="results-header">
-                    <h2>Trending Memes</h2>
+                    <h2>Trending Now</h2>
                     <button id="new-scan-btn" class="btn btn-secondary">New Scan</button>
                 </div>
                 <div id="loading" class="hidden">
                     <div class="spinner"></div>
-                    <p id="loading-text">Scanning social media platforms...</p>
+                    <p id="loading-text">Fetching trending content...</p>
                 </div>
                 <div id="results-container"></div>
-            </section>
-
-            <!-- Chat -->
-            <section id="chat-section" class="hidden">
-                <h2>Ask About These Trends</h2>
-                <div id="chat-messages"></div>
-                <div class="chat-input-row">
-                    <input type="text" id="chat-input" placeholder="Ask a question about these trends...">
-                    <button id="chat-send" class="btn btn-primary">Send</button>
-                </div>
             </section>
         </main>
 
         <!-- Footer -->
         <footer>
-            <p>Powered by Google Gemini API &middot; Your API key stays in your browser</p>
+            <p>Direct from public APIs &middot; No API key required</p>
         </footer>
     </div>
 
     <script src="platforms.js"></script>
-    <script src="gemini.js"></script>
+    <script src="api.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

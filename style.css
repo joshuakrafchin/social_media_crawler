@@ -61,84 +61,16 @@ header {
 .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
 .btn-secondary:hover { border-color: var(--accent); }
 .btn-large { padding: .9rem 2rem; font-size: 1rem; width: 100%; margin-top: 1rem; }
-.icon-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1.3rem;
-    cursor: pointer;
-    padding: .3rem;
-    transition: color .2s;
-}
-.icon-btn:hover { color: var(--text); }
-.btn-row { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1rem; }
-
-/* Settings Panel */
-.panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: min(420px, 100vw);
-    height: 100vh;
-    background: var(--surface);
-    border-left: 1px solid var(--border);
-    z-index: 200;
-    display: flex;
-    flex-direction: column;
-    box-shadow: -8px 0 32px rgba(0,0,0,.5);
-    animation: slideIn .25s ease;
-}
-@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-.panel.hidden { display: none; }
-.panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.2rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-}
-.panel-header h2 { font-size: 1.1rem; }
-.panel-body { padding: 1.5rem; overflow-y: auto; flex: 1; }
-.panel-body label {
-    display: block;
-    font-weight: 600;
-    font-size: .85rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    margin-bottom: .4rem;
-    margin-top: 1.2rem;
-}
-.panel-body label:first-child { margin-top: 0; }
-.input-row { display: flex; gap: .4rem; }
-.input-row input { flex: 1; }
-input[type="text"], input[type="password"], textarea {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text);
-    font-family: inherit;
-    font-size: .9rem;
-    padding: .7rem 1rem;
-    transition: border-color .2s;
-}
-input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-textarea { resize: vertical; }
-.hint { font-size: .8rem; color: var(--text-muted); margin-top: .3rem; }
 
 /* Main */
 main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
 section { margin-bottom: 2.5rem; }
 section h2 { font-size: 1.2rem; margin-bottom: 1rem; }
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-.section-header h2 { margin-bottom: 0; }
-.btn-small { padding: .4rem .8rem; font-size: .8rem; }
 
 /* Platform Grid */
 #platform-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: .7rem;
     margin-bottom: .5rem;
 }
@@ -161,6 +93,39 @@ section h2 { font-size: 1.2rem; margin-bottom: 1rem; }
 .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
 #results-container { display: flex; flex-direction: column; gap: 1.2rem; }
 
+/* Platform Section Headings */
+.platform-heading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: .8rem;
+    padding-bottom: .4rem;
+    border-bottom: 2px solid var(--accent);
+}
+.platform-results { margin-bottom: 2rem; }
+
+/* Trending Tags */
+.trending-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-bottom: 1rem;
+}
+.trending-tag {
+    font-size: .8rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: .3rem .8rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all .2s;
+}
+.trending-tag:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Status Cards */
 .meme-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -169,43 +134,71 @@ section h2 { font-size: 1.2rem; margin-bottom: 1rem; }
     transition: border-color .2s;
 }
 .meme-card:hover { border-color: var(--accent); }
-.meme-card-header {
-    padding: 1rem 1.2rem;
-    display: flex;
-    align-items: flex-start;
-    gap: .8rem;
-    border-bottom: 1px solid var(--border);
-}
-.meme-rank {
-    background: var(--accent);
-    color: #fff;
-    font-weight: 700;
-    font-size: .8rem;
-    min-width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.meme-title { font-weight: 700; font-size: 1.05rem; }
-.meme-platforms { display: flex; gap: .3rem; margin-top: .3rem; flex-wrap: wrap; }
-.meme-platforms .tag {
-    font-size: .7rem;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: .15rem .6rem;
-    color: var(--text-muted);
-}
 .meme-body { padding: 1rem 1.2rem; }
 .meme-body h4 { font-size: .85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .4rem; margin-top: .8rem; }
 .meme-body h4:first-child { margin-top: 0; }
-.meme-body p, .meme-body li { font-size: .92rem; color: var(--text); line-height: 1.7; }
-.meme-body ul { padding-left: 1.2rem; }
-.meme-body a { color: var(--accent); word-break: break-all; }
-.meme-body a:hover { color: var(--accent-hover); }
+.meme-body p { font-size: .92rem; color: var(--text); line-height: 1.7; }
+
+.status-header {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .8rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+.status-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.status-author {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+.author-name {
+    font-weight: 600;
+    font-size: .9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.author-handle {
+    font-size: .78rem;
+    color: var(--text-muted);
+}
+.status-time {
+    font-size: .75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.status-content {
+    padding: .8rem 1rem;
+    font-size: .92rem;
+    line-height: 1.7;
+    word-break: break-word;
+}
+.status-content a { color: var(--accent); }
+.status-content p { margin-bottom: .4rem; }
+.status-stats {
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+    padding: .6rem 1rem;
+    border-top: 1px solid var(--border);
+    font-size: .8rem;
+    color: var(--text-muted);
+}
+.status-link {
+    margin-left: auto;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--accent);
+    font-size: .8rem;
+}
+.status-link:hover { color: var(--accent-hover); }
 
 /* Loading */
 #loading { text-align: center; padding: 3rem 0; }
@@ -220,33 +213,6 @@ section h2 { font-size: 1.2rem; margin-bottom: 1rem; }
 @keyframes spin { to { transform: rotate(360deg); } }
 #loading-text { color: var(--text-muted); font-size: .9rem; }
 
-/* Chat */
-#chat-messages {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem;
-    max-height: 400px;
-    overflow-y: auto;
-    margin-bottom: .8rem;
-    min-height: 100px;
-}
-.chat-msg {
-    margin-bottom: .8rem;
-    line-height: 1.6;
-    font-size: .92rem;
-}
-.chat-msg:last-child { margin-bottom: 0; }
-.chat-msg.user { color: var(--accent); }
-.chat-msg.user::before { content: "You: "; font-weight: 700; }
-.chat-msg.assistant::before { content: "AI: "; font-weight: 700; color: #7ec8e3; }
-.chat-msg.assistant { color: var(--text); }
-.chat-msg.assistant p { margin-bottom: .4rem; }
-.chat-msg.assistant a { color: var(--accent); }
-.chat-msg.thinking { color: var(--text-muted); font-style: italic; }
-.chat-input-row { display: flex; gap: .5rem; }
-.chat-input-row input { flex: 1; }
-
 /* Footer */
 footer {
     text-align: center;
@@ -257,9 +223,11 @@ footer {
     margin-top: 2rem;
 }
 
+.hidden { display: none; }
+
 /* Responsive */
 @media (max-width: 600px) {
     header { padding: 1rem; }
     main { padding: 1.2rem 1rem; }
-    #platform-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+    #platform-grid { grid-template-columns: 1fr 1fr; }
 }
