@@ -1,46 +1,26 @@
 /**
- * Main application logic for Trending Meme Tracker.
+ * Main application — fetches trending content from Mastodon and Bluesky.
  */
 (function () {
     // ---- State ----
-    let selectedPlatforms = new Set();
-    let gemini = null;
-    let lastScanRaw = "";       // raw text from scan
-    let lastScanParsed = null;  // parsed JSON
-    let chatHistory = [];       // conversation history for follow-ups
+    let selectedPlatforms = new Set(["mastodon", "bluesky"]);
+    const mastodon = new MastodonClient();
+    const bluesky = new BlueskyClient();
 
     // ---- DOM refs ----
     const $ = (sel) => document.querySelector(sel);
-    const settingsPanel = $("#settings-panel");
-    const apiKeyInput = $("#api-key");
-    const instructionsInput = $("#system-instructions");
     const platformGrid = $("#platform-grid");
     const scanBtn = $("#scan-btn");
     const resultsSection = $("#results-section");
     const resultsContainer = $("#results-container");
     const loadingEl = $("#loading");
     const loadingText = $("#loading-text");
-    const chatSection = $("#chat-section");
-    const chatMessages = $("#chat-messages");
-    const chatInput = $("#chat-input");
 
     // ---- Init ----
     function init() {
-        loadSettings();
         renderPlatforms();
         bindEvents();
         updateScanBtnState();
-    }
-
-    function loadSettings() {
-        apiKeyInput.value = localStorage.getItem("gemini_api_key") || "";
-        const saved = localStorage.getItem("system_instructions");
-        instructionsInput.value = saved || DEFAULT_INSTRUCTIONS;
-    }
-
-    function saveSettings() {
-        localStorage.setItem("gemini_api_key", apiKeyInput.value.trim());
-        localStorage.setItem("system_instructions", instructionsInput.value);
     }
 
     // ---- Platform Grid ----
@@ -48,7 +28,7 @@
         platformGrid.innerHTML = "";
         for (const p of PLATFORMS) {
             const card = document.createElement("div");
-            card.className = "platform-card";
+            card.className = "platform-card selected";
             card.dataset.id = p.id;
             card.innerHTML = `<div class="icon">${p.icon}</div><div class="name">${p.name}</div>`;
             card.addEventListener("click", () => togglePlatform(p.id, card));
@@ -68,94 +48,63 @@
     }
 
     function updateScanBtnState() {
-        const hasKey = apiKeyInput.value.trim().length > 0;
         const hasPlatforms = selectedPlatforms.size > 0;
-        scanBtn.disabled = !(hasKey && hasPlatforms);
-        if (!hasKey) {
-            scanBtn.textContent = "Enter API Key in Settings First";
-        } else if (!hasPlatforms) {
+        scanBtn.disabled = !hasPlatforms;
+        if (!hasPlatforms) {
             scanBtn.textContent = "Select at Least One Platform";
         } else {
-            scanBtn.textContent = `Scan ${selectedPlatforms.size} Platform${selectedPlatforms.size > 1 ? "s" : ""} for Trending Memes`;
+            const names = PLATFORMS.filter(p => selectedPlatforms.has(p.id)).map(p => p.name);
+            scanBtn.textContent = `Scan ${names.join(" & ")} for Trending Content`;
         }
     }
 
     // ---- Events ----
     function bindEvents() {
-        $("#settings-toggle").addEventListener("click", () => settingsPanel.classList.remove("hidden"));
-        $("#settings-close").addEventListener("click", () => settingsPanel.classList.add("hidden"));
-        $("#save-settings").addEventListener("click", () => {
-            saveSettings();
-            updateScanBtnState();
-            settingsPanel.classList.add("hidden");
-        });
-        $("#reset-instructions").addEventListener("click", () => {
-            instructionsInput.value = DEFAULT_INSTRUCTIONS;
-        });
-        $("#toggle-key-visibility").addEventListener("click", () => {
-            apiKeyInput.type = apiKeyInput.type === "password" ? "text" : "password";
-        });
         scanBtn.addEventListener("click", startScan);
         $("#new-scan-btn").addEventListener("click", resetToScan);
-        $("#chat-send").addEventListener("click", sendChat);
-        chatInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) sendChat();
-        });
-        // Update button state when key changes
-        apiKeyInput.addEventListener("input", () => {
-            localStorage.setItem("gemini_api_key", apiKeyInput.value.trim());
-            updateScanBtnState();
-        });
     }
 
     // ---- Scanning ----
     async function startScan() {
-        const key = apiKeyInput.value.trim();
-        if (!key) {
-            settingsPanel.classList.remove("hidden");
-            return;
-        }
-
-        saveSettings();
-        gemini = new GeminiClient(key);
-
-        const platforms = PLATFORMS.filter(p => selectedPlatforms.has(p.id));
-        const instructions = instructionsInput.value || DEFAULT_INSTRUCTIONS;
-
-        // Show results section with loading
         resultsSection.classList.remove("hidden");
         loadingEl.classList.remove("hidden");
         resultsContainer.innerHTML = "";
-        chatSection.classList.add("hidden");
-        chatMessages.innerHTML = "";
-        chatHistory = [];
-        lastScanRaw = "";
-        lastScanParsed = null;
         scanBtn.disabled = true;
 
-        const platformNames = platforms.map(p => p.name).join(", ");
-        loadingText.textContent = `Scanning ${platformNames}... This may take 15-30 seconds.`;
+        const names = PLATFORMS.filter(p => selectedPlatforms.has(p.id)).map(p => p.name);
+        loadingText.textContent = `Fetching trending content from ${names.join(" & ")}...`;
+
+        const results = [];
 
         try {
-            const result = await gemini.scanTrending(platforms, instructions);
-            lastScanRaw = result.text;
-            lastScanParsed = tryParseJSON(result.text);
+            const promises = [];
 
-            if (lastScanParsed && lastScanParsed.memes) {
-                renderMemes(lastScanParsed.memes);
-            } else {
-                // Fallback: render raw text
-                renderRawResult(result.text);
+            if (selectedPlatforms.has("mastodon")) {
+                promises.push(fetchMastodon());
+            }
+            if (selectedPlatforms.has("bluesky")) {
+                promises.push(fetchBluesky());
             }
 
-            // Show chat section
-            chatSection.classList.remove("hidden");
-            chatInput.focus();
+            const settled = await Promise.allSettled(promises);
+
+            for (const result of settled) {
+                if (result.status === "fulfilled") {
+                    results.push(...result.value);
+                } else {
+                    results.push({
+                        type: "error",
+                        platform: "unknown",
+                        message: result.reason?.message || "Unknown error"
+                    });
+                }
+            }
+
+            renderResults(results);
         } catch (err) {
             resultsContainer.innerHTML = `<div class="meme-card"><div class="meme-body">
                 <h4>Error</h4>
                 <p>${escapeHtml(err.message)}</p>
-                <p style="margin-top:.5rem;color:var(--text-muted)">Check your API key in Settings and try again.</p>
             </div></div>`;
         } finally {
             loadingEl.classList.add("hidden");
@@ -164,128 +113,192 @@
         }
     }
 
-    function tryParseJSON(text) {
-        // Strip markdown code fences if present
-        let cleaned = text.trim();
-        if (cleaned.startsWith("```")) {
-            cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/```\s*$/, "");
+    async function fetchMastodon() {
+        const [statuses, tags] = await Promise.all([
+            mastodon.getTrendingStatuses(10),
+            mastodon.getTrendingTags(10)
+        ]);
+
+        const items = [];
+
+        // Trending tags
+        for (const tag of tags) {
+            const todayUses = tag.history?.[0]?.uses || 0;
+            const todayAccounts = tag.history?.[0]?.accounts || 0;
+            items.push({
+                type: "tag",
+                platform: "mastodon",
+                name: `#${tag.name}`,
+                url: tag.url,
+                uses: todayUses,
+                accounts: todayAccounts,
+            });
         }
-        try {
-            return JSON.parse(cleaned);
-        } catch {
-            // Try to find JSON in the text
-            const match = cleaned.match(/\{[\s\S]*\}/);
-            if (match) {
-                try { return JSON.parse(match[0]); } catch { /* ignore */ }
+
+        // Trending statuses
+        for (const s of statuses) {
+            items.push({
+                type: "status",
+                platform: "mastodon",
+                author: s.account?.display_name || s.account?.username || "Unknown",
+                handle: `@${s.account?.username || "unknown"}`,
+                avatar: s.account?.avatar,
+                content: s.content,
+                url: s.url,
+                reblogs: s.reblogs_count || 0,
+                favourites: s.favourites_count || 0,
+                replies: s.replies_count || 0,
+                createdAt: s.created_at,
+            });
+        }
+
+        return items;
+    }
+
+    async function fetchBluesky() {
+        const data = await bluesky.getTrendingTopics();
+        const topics = data.topics || [];
+        const items = [];
+
+        // Show trending topics
+        for (const t of topics) {
+            items.push({
+                type: "topic",
+                platform: "bluesky",
+                name: t.displayName || t.topic,
+                topic: t.topic,
+                description: t.description || "",
+                link: t.link || "",
+            });
+        }
+
+        // Fetch top posts for the first few topics
+        const topTopics = topics.slice(0, 5);
+        const postResults = await Promise.allSettled(
+            topTopics.map(t => bluesky.searchPosts(t.topic, 3))
+        );
+
+        for (const result of postResults) {
+            if (result.status !== "fulfilled") continue;
+            const posts = result.value.posts || [];
+            for (const p of posts) {
+                items.push({
+                    type: "status",
+                    platform: "bluesky",
+                    author: p.author?.displayName || p.author?.handle || "Unknown",
+                    handle: `@${p.author?.handle || "unknown"}`,
+                    avatar: p.author?.avatar,
+                    content: p.record?.text || "",
+                    url: `https://bsky.app/profile/${p.author?.handle}/post/${p.uri?.split("/").pop()}`,
+                    reblogs: p.repostCount || 0,
+                    favourites: p.likeCount || 0,
+                    replies: p.replyCount || 0,
+                    createdAt: p.indexedAt,
+                });
             }
-            return null;
         }
+
+        return items;
     }
 
     // ---- Rendering ----
-    function renderMemes(memes) {
+    function renderResults(items) {
         resultsContainer.innerHTML = "";
-        for (const meme of memes) {
-            const card = document.createElement("div");
-            card.className = "meme-card";
 
-            const platformTags = (meme.platforms || [])
-                .map(pid => {
-                    const p = PLATFORMS.find(pl => pl.id === pid);
-                    return `<span class="tag">${p ? p.icon + " " + p.name : pid}</span>`;
-                }).join("");
+        const mastodonItems = items.filter(i => i.platform === "mastodon");
+        const blueskyItems = items.filter(i => i.platform === "bluesky");
+        const errors = items.filter(i => i.type === "error");
 
-            const links = (meme.links || [])
-                .map(l => `<li><a href="${escapeAttr(l.url)}" target="_blank" rel="noopener">${escapeHtml(l.label || l.url)}</a></li>`)
-                .join("");
+        if (errors.length) {
+            for (const e of errors) {
+                const card = document.createElement("div");
+                card.className = "meme-card";
+                card.innerHTML = `<div class="meme-body"><h4>Error</h4><p>${escapeHtml(e.message)}</p></div>`;
+                resultsContainer.appendChild(card);
+            }
+        }
 
-            const viralityBar = meme.virality_score
-                ? `<div style="margin-top:.3rem">
-                    <span style="color:var(--text-muted);font-size:.8rem">Virality: ${meme.virality_score}/10</span>
-                    <div style="background:var(--border);border-radius:4px;height:6px;margin-top:.2rem">
-                        <div style="background:var(--accent);width:${meme.virality_score * 10}%;height:100%;border-radius:4px"></div>
-                    </div>
-                   </div>`
-                : "";
+        if (mastodonItems.length) {
+            renderPlatformSection("\ud83d\udc18 Mastodon Trending", mastodonItems);
+        }
+        if (blueskyItems.length) {
+            renderPlatformSection("\ud83e\udd8b Bluesky Trending", blueskyItems);
+        }
 
-            card.innerHTML = `
-                <div class="meme-card-header">
-                    <div class="meme-rank">${meme.rank || ""}</div>
-                    <div>
-                        <div class="meme-title">${escapeHtml(meme.title)}</div>
-                        <div class="meme-platforms">${platformTags}</div>
-                        ${viralityBar}
-                    </div>
-                </div>
-                <div class="meme-body">
-                    <h4>What Is It</h4>
-                    <p>${escapeHtml(meme.explanation || "")}</p>
-                    <h4>Origin</h4>
-                    <p>${escapeHtml(meme.origin || "")}</p>
-                    <h4>Why It's Trending Now</h4>
-                    <p>${escapeHtml(meme.why_trending || "")}</p>
-                    ${links ? `<h4>Links</h4><ul>${links}</ul>` : ""}
-                </div>`;
-
-            resultsContainer.appendChild(card);
+        if (!mastodonItems.length && !blueskyItems.length && !errors.length) {
+            resultsContainer.innerHTML = `<div class="meme-card"><div class="meme-body"><p>No trending content found.</p></div></div>`;
         }
     }
 
-    function renderRawResult(text) {
+    function renderPlatformSection(title, items) {
+        const section = document.createElement("div");
+        section.className = "platform-results";
+
+        const heading = document.createElement("h3");
+        heading.className = "platform-heading";
+        heading.textContent = title;
+        section.appendChild(heading);
+
+        // Render tags/topics first
+        const tags = items.filter(i => i.type === "tag" || i.type === "topic");
+        if (tags.length) {
+            const tagContainer = document.createElement("div");
+            tagContainer.className = "trending-tags";
+            for (const tag of tags) {
+                const el = document.createElement("a");
+                el.className = "trending-tag";
+                el.href = tag.url || tag.link || "#";
+                el.target = "_blank";
+                el.rel = "noopener";
+                if (tag.type === "tag") {
+                    el.textContent = `${tag.name} (${tag.uses} uses)`;
+                } else {
+                    el.textContent = tag.name;
+                }
+                tagContainer.appendChild(el);
+            }
+            section.appendChild(tagContainer);
+        }
+
+        // Render statuses
+        const statuses = items.filter(i => i.type === "status");
+        for (const s of statuses) {
+            section.appendChild(renderStatusCard(s));
+        }
+
+        resultsContainer.appendChild(section);
+    }
+
+    function renderStatusCard(s) {
         const card = document.createElement("div");
         card.className = "meme-card";
-        card.innerHTML = `<div class="meme-body"><p style="white-space:pre-wrap">${escapeHtml(text)}</p></div>`;
-        resultsContainer.appendChild(card);
+
+        const timeAgo = formatTimeAgo(s.createdAt);
+        const contentHtml = s.platform === "mastodon" ? s.content : escapeHtml(s.content);
+
+        card.innerHTML = `
+            <div class="status-header">
+                ${s.avatar ? `<img class="status-avatar" src="${escapeAttr(s.avatar)}" alt="">` : ""}
+                <div class="status-author">
+                    <span class="author-name">${escapeHtml(s.author)}</span>
+                    <span class="author-handle">${escapeHtml(s.handle)}</span>
+                </div>
+                <span class="status-time">${timeAgo}</span>
+            </div>
+            <div class="status-content">${contentHtml}</div>
+            <div class="status-stats">
+                <span title="Replies">\ud83d\udcac ${s.replies}</span>
+                <span title="Reposts">\ud83d\udd01 ${s.reblogs}</span>
+                <span title="Likes">\u2764\ufe0f ${s.favourites}</span>
+                <a href="${escapeAttr(s.url)}" target="_blank" rel="noopener" class="status-link">View Post \u2197</a>
+            </div>`;
+
+        return card;
     }
 
     function resetToScan() {
         resultsSection.classList.add("hidden");
-        chatSection.classList.add("hidden");
         resultsContainer.innerHTML = "";
-        chatMessages.innerHTML = "";
-        chatHistory = [];
-        lastScanRaw = "";
-        lastScanParsed = null;
-    }
-
-    // ---- Chat ----
-    async function sendChat() {
-        const question = chatInput.value.trim();
-        if (!question || !gemini) return;
-
-        chatInput.value = "";
-
-        // Add user message
-        appendChatMsg("user", question);
-        chatHistory.push({ role: "user", text: question });
-
-        // Show thinking
-        const thinkingEl = appendChatMsg("thinking", "Thinking...");
-
-        try {
-            const instructions = instructionsInput.value || "";
-            const result = await gemini.chat(question, lastScanRaw, chatHistory, instructions);
-            thinkingEl.remove();
-
-            const responseText = result.text;
-            appendChatMsg("assistant", responseText);
-            chatHistory.push({ role: "model", text: responseText });
-        } catch (err) {
-            thinkingEl.remove();
-            appendChatMsg("assistant", `Error: ${err.message}`);
-        }
-
-        // Scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function appendChatMsg(type, text) {
-        const div = document.createElement("div");
-        div.className = `chat-msg ${type}`;
-        div.innerHTML = type === "user" ? escapeHtml(text) : formatMarkdownLight(text);
-        chatMessages.appendChild(div);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        return div;
     }
 
     // ---- Utilities ----
@@ -299,13 +312,15 @@
         return (str || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
-    function formatMarkdownLight(text) {
-        // Simple markdown-ish formatting
-        return escapeHtml(text)
-            .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-            .replace(/\*(.+?)\*/g, "<em>$1</em>")
-            .replace(/\n/g, "<br>")
-            .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    function formatTimeAgo(dateStr) {
+        if (!dateStr) return "";
+        const now = Date.now();
+        const then = new Date(dateStr).getTime();
+        const diff = Math.floor((now - then) / 1000);
+        if (diff < 60) return "just now";
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return `${Math.floor(diff / 86400)}d ago`;
     }
 
     // ---- Go ----
